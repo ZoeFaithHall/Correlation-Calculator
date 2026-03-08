@@ -14,7 +14,6 @@ import {
 export interface ComboboxOption {
   value: string;
   label: string;
-  [key: string]: unknown; // allow arbitrary extra fields (e.g. type, inceptionDate)
 }
 
 export interface ComboboxProps<T extends ComboboxOption> {

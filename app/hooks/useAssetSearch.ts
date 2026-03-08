@@ -2,11 +2,14 @@ import { useState, useMemo, useCallback } from "react";
 import { DefaultAssets, AllAssets } from "../_data/assets";
 import type { AssetOption } from "../lib/correlationTypes";
 
-const SEARCH_THRESHOLD = 1;  // characters before switching to AllAssets
-const MAX_RESULTS = 24;       // cap dropdown length
+// _data/assets.ts types `type` as `string`, not the literal union.
+// We cast at this boundary so everything downstream gets the strict type.
+
+const SEARCH_THRESHOLD = 1; // characters before switching to AllAssets
+const MAX_RESULTS = 24;     // cap dropdown length
 
 interface UseAssetSearchOptions {
-  exclude?: string[]; // ticker values to hide from results
+  exclude?: string[];
 }
 
 export function useAssetSearch({ exclude = [] }: UseAssetSearchOptions = {}) {
@@ -14,22 +17,22 @@ export function useAssetSearch({ exclude = [] }: UseAssetSearchOptions = {}) {
 
   const excludeSet = useMemo(() => new Set(exclude), [exclude]);
 
-  const results = useMemo(() => {
-    // Use DefaultAssets until the user starts typing
-    // This avoids rendering 500+ items on first open
+  const results = useMemo((): AssetOption[] => {
     const source = query.length >= SEARCH_THRESHOLD ? AllAssets : DefaultAssets;
     const q = query.toLowerCase().trim();
 
-    return source
-      .filter((a) => !excludeSet.has(a.value))
-      .filter((a) => {
-        if (!q) return true;
-        return (
-          a.value.toLowerCase().includes(q) ||
-          a.label.toLowerCase().includes(q)
-        );
-      })
-      .slice(0, MAX_RESULTS);
+    return (
+      source
+        .filter((a) => !excludeSet.has(a.value))
+        .filter((a) => {
+          if (!q) return true;
+          return (
+            a.value.toLowerCase().includes(q) ||
+            a.label.toLowerCase().includes(q)
+          );
+        })
+        .slice(0, MAX_RESULTS) as AssetOption[]
+    );
   }, [query, excludeSet]);
 
   const clear = useCallback(() => setQuery(""), []);
