@@ -146,3 +146,56 @@ Headless base components. Nothing in here knows what a "correlation" or an "asse
 **DECISION:** `Tooltip` uses a show/hide delay (400ms default) rather than CSS `:hover` — gives programmatic control and works on focus for keyboard users.
 
 **TRADEOFF:** Tooltip has no viewport-edge positioning logic. Sufficient for this tool, worth noting if it ever gets used near the right edge of the screen.
+
+
+
+
+# feat/charts
+
+## feat: charts — CorrelationHeatmap, RollingCorrelationChart
+
+Both chart components are pure presentational — they take data and render it. No API calls, no hooks, no state beyond local UI concerns (hover, toggle). All data transformation happens in `lib/chartHelpers` before it reaches either component.
+
+| File | Purpose |
+|------|---------|
+| `CorrelationHeatmap.tsx` | NxN color-coded grid. Red (−1) → zinc (0) → lime (+1). Hover highlights row/col pair. |
+| `RollingCorrelationChart.tsx` | Recharts line chart. Per-ticker toggle buttons. Custom tooltip. Reference lines at 0, ±0.5. |
+
+Both charts are lazy loaded via `next/dynamic` in `ResultsPanel` — neither is in the initial bundle.
+
+> **Reviewers:** `isAnimationActive={false}` on every Recharts `Line` is intentional — animation re-runs on every state change and adds nothing for financial data. `buildColorMap` and `mergeTimestampSeries` are called once via `useMemo`, not inline on every render.
+
+---
+
+## Commits
+
+### `feat(charts): add CorrelationHeatmap`
+**WHY:** Color encodes correlation faster than reading numbers — the heatmap is the primary output, the values are secondary confirmation.
+
+**DECISION:** `buildMatrixLookup` and `getMatrixSymbols` called once via `useMemo` — O(n) setup, not O(n²) repeated scans on every cell render.
+
+**DECISION:** Hover highlights the full row and column — makes it easy to read which pair you're looking at without a tooltip overlay.
+
+**TRADEOFF:** `cellSize` scales down for more assets but has a 52px floor — below that, numbers become unreadable. The API caps at 6 assets so this won't be hit in practice.
+
+---
+
+### `feat(charts): add RollingCorrelationChart`
+**WHY:** Rolling correlation over time is the primary analytical output — the heatmap shows the aggregate, this shows how it changes.
+
+**DECISION:** `isAnimationActive={false}` on all lines — Recharts animation re-runs on every state change, costs perf, adds nothing for financial data.
+
+**DECISION:** Toggle buttons use `aria-pressed` — correct ARIA pattern for a binary on/off control, not a checkbox or radio.
+
+**TRADEOFF:** Hidden lines set `strokeWidth=0` rather than removing the `Line` element — removing causes Recharts to remount and briefly flash. Zero-width is invisible and stable.
+
+---
+
+### `perf(charts): lazy load both charts via next/dynamic`
+**WHY:** Recharts adds ~150kb to the bundle — neither chart is visible on initial load, no reason to pay that cost upfront.
+
+**DECISION:** `ssr: false` on both — Recharts uses `window` and `document`, SSR would throw.
+
+**DECISION:** `ChartSkeleton` as the loading fallback — matches the shape of the chart area so layout doesn't shift when the chart loads.
+
+**TRADEOFF:** Dynamic import means a small waterfall on first run — user clicks Run, API responds, then the chart bundle loads. Acceptable since the API call takes longer than the bundle fetch.
