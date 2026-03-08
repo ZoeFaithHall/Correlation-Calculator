@@ -1,26 +1,20 @@
 "use client";
 
-import { useState, useCallback, useMemo, Suspense } from "react";
+import { useState, useCallback, Suspense } from "react";
 import { ControlPanel } from "./components/correlation/ControlPanel";
 import { ResultsPanel } from "./components/correlation/ResultsPanel";
 import { TimeControls } from "./components/correlation/TimeControls";
 import { useCorrelation } from "./hooks/useCorrelation";
 import { useQueryParams } from "./hooks/useQueryParams";
+import { useOnboardingStep } from "./hooks/useOnboardingStep";
 
 // ─── Inner page ───────────────────────────────────────────────────────────────
 
 function CorrelationsPage() {
   const { params } = useQueryParams();
   const { state, run } = useCorrelation();
+  const step = useOnboardingStep(params);
   const [isStale, setIsStale] = useState(false);
-
-  // Derive walkthrough step from params
-  // 1 = no designated, 2 = designated but no comparisons, 3 = ready
-  const step = useMemo<1 | 2 | 3>(() => {
-    if (!params.designated) return 1;
-    if (params.comparisons.length === 0) return 2;
-    return 3;
-  }, [params.designated, params.comparisons]);
 
   const handleRun = useCallback(() => {
     setIsStale(false);
@@ -83,7 +77,7 @@ function CorrelationsPage() {
 
           {/* Time controls bar */}
           <div
-            className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 shrink-0 flex items-center gap-2 flex-wrap transition-all duration-300"
+            className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 shrink-0 flex items-center gap-2 flex-wrap transition-all duration-300"
             style={{
               boxShadow: step === 3
                 ? "0 0 0 1px rgba(163,230,53,0.25), 0 0 12px rgba(163,230,53,0.08)"
