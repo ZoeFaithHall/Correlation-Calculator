@@ -29,6 +29,7 @@ interface ResultsPanelProps {
   correlationState: CorrelationState;
   designated: AssetOption | null;
   isStale: boolean;
+  maxWindow: number;
   onWindowDragEnd: (window: number) => void;
 }
 
@@ -38,6 +39,7 @@ export function ResultsPanel({
   correlationState,
   designated,
   isStale,
+  maxWindow,
   onWindowDragEnd,
 }: ResultsPanelProps) {
   const { status, data, fatalErrors, warnings } = correlationState;
@@ -79,7 +81,7 @@ export function ResultsPanel({
     return (
       <div className="flex-1 flex flex-col gap-3" aria-busy="true" aria-label="Loading results">
         <div className="flex gap-3 flex-1">
-          <div className="w-[38%] bg-zinc-900 border border-zinc-800 rounded-lg animate-pulse">
+          <div className="w-[38%] bg-zinc-900 border border-zinc-800 rounded-xl animate-pulse">
             <div className="px-4 py-3 border-b border-zinc-800">
               <div className="h-3.5 w-32 bg-zinc-800 rounded" />
             </div>
@@ -87,7 +89,7 @@ export function ResultsPanel({
               <ChartSkeleton />
             </div>
           </div>
-          <div className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg animate-pulse">
+          <div className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl animate-pulse">
             <div className="px-4 py-3 border-b border-zinc-800">
               <div className="h-3.5 w-40 bg-zinc-800 rounded" />
             </div>
@@ -96,7 +98,7 @@ export function ResultsPanel({
             </div>
           </div>
         </div>
-        <div className="h-10 bg-zinc-900 border border-zinc-800 rounded-lg animate-pulse" />
+        <div className="h-10 bg-zinc-900 border border-zinc-800 rounded-xl animate-pulse" />
       </div>
     );
   }
@@ -107,7 +109,7 @@ export function ResultsPanel({
       <div className="flex-1 flex items-center justify-center">
         <div
           role="alert"
-          className="bg-red-900/20 border border-red-800/50 rounded-lg p-5 max-w-md w-full"
+          className="bg-red-900/20 border border-red-800/50 rounded-xl p-5 max-w-md w-full"
         >
           <p className="text-sm font-semibold text-red-400 mb-2">
             Analysis failed
@@ -166,7 +168,7 @@ export function ResultsPanel({
         <div className="flex gap-3 flex-1 min-h-0">
 
           {/* Heatmap — fixed width */}
-          <section className="w-[38%] shrink-0 bg-zinc-900 border border-zinc-800 rounded-lg flex flex-col overflow-hidden">
+          <section className="w-[38%] shrink-0 bg-zinc-900 border border-zinc-800 rounded-xl flex flex-col overflow-hidden">
             <div className="px-4 py-3 border-b border-zinc-800 shrink-0">
               <h2 className="text-sm font-semibold text-slate-100">Correlation Matrix</h2>
               <p className="text-xs text-zinc-500 mt-0.5">Pearson r — all pairs, selected period</p>
@@ -177,7 +179,7 @@ export function ResultsPanel({
           </section>
 
           {/* Rolling chart — fills remaining space */}
-          <section className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg flex flex-col overflow-hidden min-w-0">
+          <section className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl flex flex-col overflow-hidden min-w-0">
             <div className="px-4 py-3 border-b border-zinc-800 shrink-0">
               <h2 className="text-sm font-semibold text-slate-100">Rolling Correlation</h2>
               <p className="text-xs text-zinc-500 mt-0.5">
@@ -194,8 +196,8 @@ export function ResultsPanel({
         </div>
 
         {/* Window scrubber */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-5 py-3 shrink-0">
-          <WindowScrubber onDragEnd={onWindowDragEnd} />
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-3 shrink-0">
+          <WindowScrubber maxWindow={maxWindow} onDragEnd={onWindowDragEnd} />
         </div>
       </div>
     );
