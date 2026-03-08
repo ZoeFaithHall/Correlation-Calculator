@@ -96,3 +96,53 @@ Pulls all logic out of components. `page.tsx` calls hooks, reads state, passes d
 **DECISION:** Cast at the callsite (`a as AssetOption`) rather than modifying the scaffold's data file — keeps the fix local and avoids touching files outside our scope.
 
 **TRADEOFF:** If `assets.ts` is ever updated to use `as const satisfies AssetOption[]`, this cast becomes redundant but harmless. The cleaner long-term fix is `as const satisfies AssetOption[]` on the export — tracked as a follow-up.
+
+
+
+
+# feat/ui-primitives
+
+## feat: UI primitives — Combobox, MultiCombobox, Badge, Spinner, Tooltip
+
+Headless base components. Nothing in here knows what a "correlation" or an "asset" is. The domain components in the next branch compose from these.
+
+| File | Purpose |
+|------|---------|
+| `Combobox.tsx` | Single-select. Takes `options`, `renderOption`, `renderSelected`. No filtering. |
+| `MultiCombobox.tsx` | Multi-select. Chips, toggle, backspace-to-remove, max cap. |
+| `Badge.tsx` | `TypeBadge`, `Spinner`, `Tooltip` — co-located since they're all small atoms. |
+
+> **Reviewers:** `Combobox` and `MultiCombobox` have full keyboard nav (arrow keys, enter, escape, tab, backspace) and correct ARIA roles — `role="combobox"`, `aria-expanded`, `aria-activedescendant`, `aria-multiselectable`. This is the line between "design system" and "product."
+
+---
+
+## Commits
+
+### `feat(ui): add Combobox primitive`
+**WHY:** Both asset selectors need a dropdown — building one reusable base avoids two diverging implementations.
+
+**DECISION:** `renderOption` and `renderSelected` are render props — the primitive has no opinion on what an option looks like.
+
+**DECISION:** Full keyboard nav and `aria-activedescendant` — WCAG 1.4 combobox pattern.
+
+**TRADEOFF:** Caller manages the options list — `Combobox` does not filter, that stays in `useAssetSearch`.
+
+---
+
+### `feat(ui): add MultiCombobox primitive`
+**WHY:** Multi-select has different enough behavior (chips, toggle, backspace-to-remove, max cap) to warrant its own component rather than a mode flag on `Combobox`.
+
+**DECISION:** Backspace on empty query removes the last chip — standard multi-select UX, no documentation needed.
+
+**DECISION:** Input hides when `atMax` rather than disabling — cleaner than a grayed-out input, and the status message explains why.
+
+**TRADEOFF:** `renderChip` is separate from `renderOption` — chip display is constrained space, option row is not.
+
+---
+
+### `feat(ui): add Badge, Spinner, Tooltip atoms`
+**WHY:** `TypeBadge` and `Spinner` were duplicated across both combobox components — one definition, two consumers.
+
+**DECISION:** `Tooltip` uses a show/hide delay (400ms default) rather than CSS `:hover` — gives programmatic control and works on focus for keyboard users.
+
+**TRADEOFF:** Tooltip has no viewport-edge positioning logic. Sufficient for this tool, worth noting if it ever gets used near the right edge of the screen.
