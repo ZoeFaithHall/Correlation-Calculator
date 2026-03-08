@@ -152,7 +152,7 @@ export function Combobox<T extends ComboboxOption>({
   return (
     <div ref={containerRef} className="relative">
       {/* Label row */}
-      <div className="flex items-baseline justify-between mb-1.5">
+      <div className="flex flex-col items-baseline justify-between justify-between gap-1 mb-1.5 p-2.5">
         <label
           htmlFor={uid}
           className="text-xs font-medium text-zinc-400"
@@ -179,7 +179,7 @@ export function Combobox<T extends ComboboxOption>({
       >
         {/* Selected value slot */}
         {selected && renderSelected && (
-          <span className="shrink-0">{renderSelected(selected)}</span>
+          <span className="flex shrink-0 rounded-lg">{renderSelected(selected)}</span>
         )}
 
         <input
@@ -224,7 +224,7 @@ export function Combobox<T extends ComboboxOption>({
 
       {/* Dropdown */}
       {open && !disabled && (
-        <div className="absolute z-50 mt-1 w-full bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl overflow-hidden">
           {options.length === 0 ? (
             <p className="text-xs text-zinc-500 px-3 py-3" role="status">
               No results found

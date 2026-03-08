@@ -50,7 +50,7 @@ function CustomTooltip({
 
   return (
     <div
-      className="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl px-4 py-3 min-w-[176px]"
+      className="bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl px-4 py-3 min-w-[176px]"
       role="tooltip"
     >
       <p className="text-xs text-zinc-400 mb-2.5 font-medium">
