@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { DesignatedSelector, ComparisonSelector } from "./AssetSelector";
 import { Spinner } from "../ui/Badge";
 import { useQueryParams } from "../../hooks/useQueryParams";
-import { validateParams, getMinStartDate, toISODate } from "../../lib/assetHelpers";
+import { validateParams } from "../../lib/assetHelpers";
 import type { CorrelationState } from "../../lib/correlationTypes";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -13,6 +13,8 @@ interface ControlPanelProps {
   correlationState: CorrelationState;
   onRun: () => void;
   onParamsChange?: () => void;
+  // Step passed down from page so TimeControls can also react
+  step: 1 | 2 | 3;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -21,35 +23,14 @@ export function ControlPanel({
   correlationState,
   onRun,
   onParamsChange,
+  step,
 }: ControlPanelProps) {
-  const {
-    params,
-    setDesignated,
-    setComparisons,
-    setStartDate,
-    setEndDate,
-    setRollingWindow,
-  } = useQueryParams();
+  const { params, setDesignated, setComparisons } = useQueryParams();
+  const { designated, comparisons } = params;
 
-  const { designated, comparisons, startDate, endDate, rollingWindow } = params;
-
-  // Validation runs on every param change — never on submission
   const validation = useMemo(() => validateParams(params), [params]);
-
-  // Min start date constrained by the latest inception date among selected assets
-  const allSelected = useMemo(
-    () => (designated ? [designated, ...comparisons] : comparisons),
-    [designated, comparisons]
-  );
-  const minStartDate = useMemo(
-    () => getMinStartDate(allSelected),
-    [allSelected]
-  );
-
-  const today = toISODate(new Date());
   const isLoading = correlationState.status === "loading";
 
-  // Notify parent that params changed so it can mark results stale
   function handleParamChange<T extends unknown[]>(fn: (...args: T) => void) {
     return (...args: T) => {
       fn(...args);
@@ -58,98 +39,52 @@ export function ControlPanel({
   }
 
   return (
-    <aside className="w-72 shrink-0 sticky top-6">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 flex flex-col gap-5">
+    <aside className="w-64 shrink-0 flex flex-col">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 flex flex-col gap-4 flex-1" >
 
-        {/* Designated */}
-        <DesignatedSelector
-          selected={designated}
-          onSelect={handleParamChange(setDesignated)}
-          exclude={comparisons.map((a) => a.value)}
-        />
-
-        {/* Comparisons */}
-        <ComparisonSelector
-          selected={comparisons}
-          onSelect={handleParamChange(setComparisons)}
-          exclude={designated ? [designated.value] : []}
-          max={5}
-        />
-
-        {/* Date range */}
-        <fieldset className="flex flex-col gap-2">
-          <legend className="text-xs font-medium text-zinc-400 mb-0.5">
-            Date Range
-          </legend>
-
-          <div>
-            <label
-              htmlFor="start-date"
-              className="text-xs text-zinc-500 mb-1 block"
-            >
-              Start
-            </label>
-            <input
-              id="start-date"
-              type="date"
-              value={startDate}
-              min={minStartDate}
-              max={endDate}
-              onChange={(e) =>
-                handleParamChange(setStartDate)(e.target.value)
-              }
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-lime-500 transition-colors"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="end-date"
-              className="text-xs text-zinc-500 mb-1 block"
-            >
-              End
-            </label>
-            <input
-              id="end-date"
-              type="date"
-              value={endDate}
-              max={today}
-              onChange={(e) =>
-                handleParamChange(setEndDate)(e.target.value)
-              }
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-lime-500 transition-colors"
-            />
-          </div>
-        </fieldset>
-
-        {/* Rolling window */}
-        <div>
-          <label
-            htmlFor="rolling-window"
-            className="text-xs font-medium text-zinc-400 mb-1.5 block"
+        {/* Step 1 — Designated */}
+        <div className="flex flex-col gap-1.5">
+          <div
+            className="rounded-lg transition-all duration-300"
+            style={{
+              boxShadow: step === 1
+                ? "0 0 0 2px rgba(163,230,53,0.5), 0 0 16px rgba(163,230,53,0.15)"
+                : "none",
+            }}
           >
-            Rolling Window
-          </label>
-          <div className="flex items-center gap-2">
-            <input
-              id="rolling-window"
-              type="number"
-              min={30}
-              max={365}
-              value={rollingWindow}
-              onChange={(e) =>
-                handleParamChange(setRollingWindow)(Number(e.target.value))
-              }
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-lime-500 transition-colors"
+            <DesignatedSelector
+              selected={designated}
+              onSelect={handleParamChange(setDesignated)}
+              exclude={comparisons.map((a) => a.value)}
             />
-            <span className="text-xs text-zinc-500 whitespace-nowrap">
-              trading days
-            </span>
           </div>
         </div>
 
+        {/* Step 2 — Comparisons */}
+        <div className="flex flex-col gap-1.5">
+          <div
+            className="rounded-lg transition-all duration-300"
+            style={{
+              boxShadow: step === 2
+                ? "0 0 0 2px rgba(163,230,53,0.5), 0 0 16px rgba(163,230,53,0.15)"
+                : "none",
+              opacity: step === 1 ? 0.4 : 1,
+              transition: "opacity 0.2s ease, box-shadow 0.3s ease",
+            }}
+          >
+            <ComparisonSelector
+              selected={comparisons}
+              onSelect={handleParamChange(setComparisons)}
+              exclude={designated ? [designated.value] : []}
+              max={5}
+            />
+          </div>
+        </div>
+
+        <div className="flex-1" />
+
         {/* Validation hint */}
-        {!validation.valid && validation.reason && (
+        {!validation.valid && validation.reason && step === 3 && (
           <p
             role="alert"
             className="text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-lg px-3 py-2"
@@ -164,7 +99,14 @@ export function ControlPanel({
           onClick={onRun}
           disabled={!validation.valid || isLoading}
           aria-busy={isLoading}
-          className="w-full bg-lime-400 hover:bg-lime-300 disabled:bg-zinc-700 disabled:text-zinc-500 text-zinc-950 font-semibold text-sm rounded-lg py-2.5 transition-colors disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full font-semibold text-sm rounded-lg py-2.5 transition-all disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          style={{
+            background: !validation.valid || isLoading ? "#27272a" : "#a3e635",
+            color: !validation.valid || isLoading ? "#52525b" : "#0a0a0a",
+            boxShadow: step === 3 && validation.valid
+              ? "0 0 0 2px rgba(163,230,53,0.5), 0 0 20px rgba(163,230,53,0.2)"
+              : "none",
+          }}
         >
           {isLoading ? (
             <>

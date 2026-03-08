@@ -15,24 +15,63 @@ interface CorrelationHeatmapProps {
   matrix: Array<Record<string, number>>;
 }
 
+interface HoveredPair {
+  row: string;
+  col: string;
+  value: number;
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function CorrelationHeatmap({ matrix }: CorrelationHeatmapProps) {
-  const [hoveredPair, setHoveredPair] = useState<{
-    row: string;
-    col: string;
-  } | null>(null);
+  const [hoveredPair, setHoveredPair] = useState<HoveredPair | null>(null);
 
   const symbols = useMemo(() => getMatrixSymbols(matrix), [matrix]);
   const lookup = useMemo(() => buildMatrixLookup(matrix), [matrix]);
 
   if (symbols.length === 0) return null;
 
-  // Cell size scales down gracefully as asset count grows
   const cellSize = Math.max(52, Math.min(88, Math.floor(560 / symbols.length)));
+
+  const isRowHighlighted = (sym: string) => hoveredPair?.row === sym || hoveredPair?.col === sym;
+  const isColHighlighted = (sym: string) => hoveredPair?.col === sym || hoveredPair?.row === sym;
 
   return (
     <div className="overflow-x-auto">
+
+      {/* Pair label — always-visible strip above the matrix */}
+      <div className="h-7 mb-2 flex items-center">
+        {hoveredPair ? (
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-sm font-semibold text-slate-100">
+              {hoveredPair.row}
+            </span>
+            <span className="text-zinc-500 text-xs">vs</span>
+            <span className="font-mono text-sm font-semibold text-slate-100">
+              {hoveredPair.col}
+            </span>
+            <span className="text-zinc-600 mx-1">·</span>
+            <span
+              className="font-mono text-sm font-bold tabular-nums"
+              style={{
+                color:
+                  hoveredPair.value > 0.2
+                    ? "#86efac"
+                    : hoveredPair.value < -0.2
+                    ? "#fca5a5"
+                    : "#94a3b8",
+              }}
+            >
+              {formatCorrelation(hoveredPair.value)}
+            </span>
+          </div>
+        ) : (
+          <span className="text-xs text-zinc-600">
+            Hover a cell to see the pair
+          </span>
+        )}
+      </div>
+
       <table
         role="grid"
         aria-label="Correlation matrix"
@@ -50,7 +89,12 @@ export function CorrelationHeatmap({ matrix }: CorrelationHeatmapProps) {
                 style={{ width: cellSize }}
                 className="pb-2 text-center"
               >
-                <span className="text-xs font-mono font-semibold text-zinc-300">
+                <span
+                  className="text-xs font-mono font-semibold transition-colors"
+                  style={{
+                    color: isColHighlighted(sym) ? "#a3e635" : "#d4d4d8",
+                  }}
+                >
                   {sym}
                 </span>
               </th>
@@ -66,7 +110,12 @@ export function CorrelationHeatmap({ matrix }: CorrelationHeatmapProps) {
               <tr key={rowSym}>
                 {/* Row label */}
                 <td className="pr-2 text-right align-middle">
-                  <span className="text-xs font-mono font-semibold text-zinc-300">
+                  <span
+                    className="text-xs font-mono font-semibold transition-colors"
+                    style={{
+                      color: isRowHighlighted(rowSym) ? "#a3e635" : "#d4d4d8",
+                    }}
+                  >
                     {rowSym}
                   </span>
                 </td>
@@ -75,8 +124,11 @@ export function CorrelationHeatmap({ matrix }: CorrelationHeatmapProps) {
                 {symbols.map((colSym) => {
                   const value = rowData[colSym] ?? 0;
                   const isSelf = rowSym === colSym;
+                  const isActive =
+                    hoveredPair?.row === rowSym && hoveredPair?.col === colSym;
                   const isHighlighted =
                     hoveredPair !== null &&
+                    !isSelf &&
                     (hoveredPair.row === rowSym || hoveredPair.col === colSym);
 
                   return (
@@ -85,7 +137,8 @@ export function CorrelationHeatmap({ matrix }: CorrelationHeatmapProps) {
                       role="gridcell"
                       aria-label={`${rowSym} vs ${colSym}: ${formatCorrelation(value)}`}
                       onMouseEnter={() =>
-                        !isSelf && setHoveredPair({ row: rowSym, col: colSym })
+                        !isSelf &&
+                        setHoveredPair({ row: rowSym, col: colSym, value })
                       }
                       onMouseLeave={() => setHoveredPair(null)}
                       style={{
@@ -94,12 +147,15 @@ export function CorrelationHeatmap({ matrix }: CorrelationHeatmapProps) {
                         background: correlationBgColor(value),
                         color: correlationTextColor(value),
                         borderRadius: 6,
-                        outline: isSelf
+                        outline: isActive
+                          ? "2px solid rgba(163,230,53,0.9)"
+                          : isSelf
                           ? "2px solid rgba(163,230,53,0.2)"
                           : isHighlighted
-                          ? "2px solid rgba(163,230,53,0.55)"
+                          ? "2px solid rgba(163,230,53,0.35)"
                           : "2px solid transparent",
-                        transition: "outline 0.1s ease",
+                        opacity: hoveredPair && !isActive && !isHighlighted && !isSelf ? 0.45 : 1,
+                        transition: "outline 0.1s ease, opacity 0.1s ease",
                         cursor: isSelf ? "default" : "pointer",
                       }}
                     >
