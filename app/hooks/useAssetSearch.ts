@@ -1,50 +1,31 @@
-import { useState, useMemo, useCallback } from "react";
+"use client";
+
+import { useMemo } from "react";
 import { DefaultAssets, AllAssets } from "../_data/assets";
+import { useSearch } from "./useSearch";
 import type { AssetOption } from "../lib/correlationTypes";
 
-// _data/assets.ts types `type` as `string`, not the literal union.
-// We cast at this boundary so everything downstream gets the strict type.
+// ─── Thin wrapper ─────────────────────────────────────────────────────────────
 
-const SEARCH_THRESHOLD = 1; // characters before switching to AllAssets
-const MAX_RESULTS = 24;     // cap dropdown length
+/**
+ * Asset-specific search built on the generic useSearch hook.
+ * Filtering logic lives here; useSearch owns the query state and memoization.
+ */
 
 interface UseAssetSearchOptions {
   exclude?: string[];
 }
 
 export function useAssetSearch({ exclude = [] }: UseAssetSearchOptions = {}) {
-  const [query, setQuery] = useState("");
+  const excludeKeys = useMemo(() => new Set(exclude), [exclude]);
 
-  const excludeSet = useMemo(() => new Set(exclude), [exclude]);
-
-  const results = useMemo((): AssetOption[] => {
-    const source = query.length >= SEARCH_THRESHOLD ? AllAssets : DefaultAssets;
-    const q = query.toLowerCase().trim();
-
-    return (
-      source
-        .filter((a) => !excludeSet.has(a.value))
-        .filter((a) => {
-          if (!q) return true;
-          return (
-            a.value.toLowerCase().includes(q) ||
-            a.label.toLowerCase().includes(q)
-          );
-        })
-        .slice(0, MAX_RESULTS) as AssetOption[]
-    );
-  }, [query, excludeSet]);
-
-  const clear = useCallback(() => setQuery(""), []);
-
-  const isSearching = query.length >= SEARCH_THRESHOLD;
-
-  return {
-    query,
-    setQuery,
-    clear,
-    results,
-    isSearching,
-    hasResults: results.length > 0,
-  };
+  return useSearch<AssetOption>({
+    allItems: AllAssets as AssetOption[],
+    defaultItems: DefaultAssets as AssetOption[],
+    filterFn: (asset, query) =>
+      asset.value.toLowerCase().includes(query) ||
+      asset.label.toLowerCase().includes(query),
+    excludeKeys,
+    getKey: (asset) => asset.value,
+  });
 }

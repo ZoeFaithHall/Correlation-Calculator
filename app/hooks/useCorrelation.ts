@@ -60,7 +60,7 @@ export function useCorrelation() {
         fatalErrors: [],
         warnings: data.errors?.warnings ?? [],
       });
-    } catch (err) {
+    } catch {
       setState({
         status: "error",
         data: null,
@@ -72,15 +72,7 @@ export function useCorrelation() {
     }
   }, []);
 
-  // Call this when the user changes inputs after a successful run
-  // This keeps the stale results visible but flags them as outdated
-  const markStale = useCallback(() => {
-    setState((prev) =>
-      prev.status === "success" ? { ...prev, status: "stale" as any } : prev
-    );
-  }, []);
-
   const reset = useCallback(() => setState(IDLE_STATE), []);
 
-  return { state, run, markStale, reset };
+  return { state, run, reset };
 }

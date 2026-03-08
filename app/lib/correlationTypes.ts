@@ -40,9 +40,7 @@ export interface CorrelationErrors {
 export type RollingCorrelationSeries = Array<[number, number]>;
 
 export interface CorrelationData {
-  // One series per comparison asset, keyed by symbol
   correlationChart: Record<string, RollingCorrelationSeries>;
-  // NxN matrix — every asset pair. Self-correlation is always 1.
   correlationMatrix: Array<Record<string, number>>;
 }
 
@@ -53,9 +51,11 @@ export interface CorrelationResponse {
 
 // ─── UI State ─────────────────────────────────────────────────────────────────
 
-// What the hook returns to the page
+// "stale" = successful run, params have changed since — show old data with warning
+export type CorrelationStatus = "idle" | "loading" | "success" | "stale" | "error";
+
 export interface CorrelationState {
-  status: "idle" | "loading" | "success" | "error";
+  status: CorrelationStatus;
   data: CorrelationResponse | null;
   fatalErrors: string[];
   warnings: CorrelationWarning[];
