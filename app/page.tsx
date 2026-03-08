@@ -1,18 +1,72 @@
-export default function Home() {
+"use client";
+
+import { useState, useCallback, Suspense } from "react";
+import { ControlPanel } from "./components/correlation/ControlPanel";
+import { ResultsPanel } from "./components/correlation/ResultsPanel";
+import { useCorrelation } from "./hooks/useCorrelation";
+import { useQueryParams } from "./hooks/useQueryParams";
+
+// ─── Inner page (needs Suspense boundary for useSearchParams) ─────────────────
+
+function CorrelationsPage() {
+  const { params } = useQueryParams();
+  const { state, run } = useCorrelation();
+  const [isStale, setIsStale] = useState(false);
+
+  const handleRun = useCallback(() => {
+    setIsStale(false);
+    run(params);
+  }, [params, run]);
+
+  const handleParamsChange = useCallback(() => {
+    if (state.status === "success") setIsStale(true);
+  }, [state.status]);
+
   return (
-    <main style={{ minHeight: "100vh", backgroundColor: "#f9fafb" }}>
-      <header style={{ backgroundColor: "#fff", borderBottom: "1px solid #e5e7eb", padding: "1rem 1.5rem" }}>
-        <h1 style={{ fontSize: "1.125rem", fontWeight: 600, color: "#111827", margin: 0 }}>
-          Correlations Tool
-        </h1>
+    <div
+      className="min-h-screen bg-zinc-950 text-slate-100"
+      style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
+    >
+      {/* ── Header ── */}
+      <header className="border-b border-zinc-800 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center gap-3">
+          <div className="w-2 h-6 rounded-sm bg-lime-400" aria-hidden="true" />
+          <div>
+            <h1 className="text-base font-semibold tracking-tight leading-none">
+              Correlations
+            </h1>
+            <p className="text-xs text-zinc-500 mt-0.5">
+              Rolling Pearson correlation between assets
+            </p>
+          </div>
+        </div>
       </header>
 
-      <div style={{ maxWidth: "64rem", margin: "0 auto", padding: "2rem 1.5rem" }}>
-        <p style={{ color: "#4b5563", fontSize: "0.875rem" }}>
-          Build your UI here. See <code>README.md</code> for
-          the full task description and <code>POST /api/correlation</code> API reference.
-        </p>
+      {/* ── Layout ── */}
+      <div className="max-w-7xl mx-auto p-6 flex gap-6 items-start">
+        <ControlPanel
+          correlationState={state}
+          onRun={handleRun}
+          onParamsChange={handleParamsChange}
+        />
+        <main className="flex-1 min-w-0">
+          <ResultsPanel
+            correlationState={state}
+            designated={params.designated}
+            isStale={isStale}
+          />
+        </main>
       </div>
-    </main>
+    </div>
+  );
+}
+
+// ─── Export (Suspense required for useSearchParams in App Router) ─────────────
+
+export default function Page() {
+  return (
+    <Suspense>
+      <CorrelationsPage />
+    </Suspense>
   );
 }
