@@ -4,7 +4,7 @@ import type { AssetOption, CorrelationRequest, CorrelationParams } from "./corre
 
 /**
  * Maps an AssetOption's type to the API's compareType field.
- * The API only distinguishes crypto vs everything else.
+ * The API only distinguishes crypto vs everything-else.
  */
 export function assetToCompareType(asset: AssetOption): "stock" | "crypto" {
   return asset.type === "crypto" ? "crypto" : "stock";
@@ -97,7 +97,17 @@ export function validateParams(params: CorrelationParams): ValidationResult {
     };
   }
 
-  // Respect asset inception dates. Start can't predate the
+  // Rolling window (trading days) must not exceed the date range.
+  // Use the same 0.65 multiplier as maxRollingWindow to stay inside the API boundary.
+  const maxWindow = Math.max(MIN_WINDOW, Math.floor(diffDays * 0.65));
+  if (params.rollingWindow > maxWindow) {
+    return {
+      valid: false,
+      reason: `Rolling window (${params.rollingWindow}d) exceeds the date range. Maximum for this range is ${maxWindow}d.`,
+    };
+  }
+
+  // Respect asset inception dates — start can't predate the
   // latest inception date among all selected assets
   const allAssets = [params.designated, ...params.comparisons];
   const latestInception = allAssets.reduce<string | null>((latest, asset) => {
@@ -133,7 +143,7 @@ export function defaultEndDate(): string {
 }
 
 /**
- * Returns the minimum valid start date for a set of assets
+ * Returns the minimum valid start date for a set of assets —
  * the latest of all their inception dates, or undefined if none have one.
  */
 export function getMinStartDate(assets: AssetOption[]): string | undefined {
@@ -142,4 +152,20 @@ export function getMinStartDate(assets: AssetOption[]): string | undefined {
     if (!latest) return asset.inceptionDate;
     return asset.inceptionDate > latest ? asset.inceptionDate : latest;
   }, undefined);
+}
+
+/**
+ * Computes the maximum valid rolling window for a given date range.
+ *
+ * Rolling window is in trading days. Date range is in calendar days.
+ * Trading days ≈ 70% of calendar days. We use 0.65 as a conservative
+ * multiplier to stay clear of the API's boundary check, with a floor
+ * of MIN_WINDOW (14) so short ranges still allow some window.
+ */
+export const MIN_WINDOW = 14;
+
+export function maxRollingWindow(startDate: string, endDate: string): number {
+  const diffDays =
+    (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86_400_000;
+  return Math.max(MIN_WINDOW, Math.floor(diffDays * 0.65));
 }

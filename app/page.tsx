@@ -5,6 +5,7 @@ import { ControlPanel } from "./components/correlation/ControlPanel";
 import { ResultsPanel } from "./components/correlation/ResultsPanel";
 import { TimeControls } from "./components/correlation/TimeControls";
 import { useCorrelation } from "./hooks/useCorrelation";
+import { maxRollingWindow } from "./lib/assetHelpers";
 import { useQueryParams } from "./hooks/useQueryParams";
 import { useOnboardingStep } from "./hooks/useOnboardingStep";
 
@@ -14,6 +15,7 @@ function CorrelationsPage() {
   const { params } = useQueryParams();
   const { state, run } = useCorrelation();
   const step = useOnboardingStep(params);
+  const maxWindow = maxRollingWindow(params.startDate, params.endDate);
   const [isStale, setIsStale] = useState(false);
 
   const handleRun = useCallback(() => {
@@ -94,6 +96,7 @@ function CorrelationsPage() {
             correlationState={state}
             designated={params.designated}
             isStale={isStale}
+            maxWindow={maxWindow}
             onWindowDragEnd={handleWindowDragEnd}
           />
         </div>
