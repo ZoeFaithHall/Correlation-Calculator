@@ -1,6 +1,6 @@
 # Correlations Tool
 
-A take-home project built for Bitwise Asset Management. The goal: visualize rolling Pearson correlations between stocks, ETFs, and crypto assets over a configurable time window.
+A tool built for Bitwise Asset Management. The goal: visualize rolling Pearson correlations between stocks, ETFs, and crypto assets over a configurable time window.
 
 Live reference: https://experts.bitwiseinvestments.com/tools/correlations
 
