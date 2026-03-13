@@ -1,4 +1,4 @@
-# Correlations Tool
+# Correlation Tool
 
 A tool built for Bitwise Asset Management. The goal: visualize rolling Pearson correlations between stocks, ETFs, and crypto assets over a configurable time window.
 
